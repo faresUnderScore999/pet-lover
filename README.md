@@ -16,19 +16,27 @@
 The Compose setup uses the PostgreSQL database configured in `server/.env`; it
 does not start a separate database container.
 
-## Deploy the frontend and API together on Vercel
+## Deploy as multiple Vercel services
 
-1. Import the repository root as one Vercel project. Keep the project root set
-   to the repository root so Vercel uses the root `package.json` and
-   `vercel.json`.
-2. In **Project Settings → Environment Variables**, add:
-   - `DATABASE_URL` — the Neon connection URL
-   - `JWT_SECRET` — a strong random secret
-   - `JWT_EXPIRES_IN` — for example `7d`
-   - `CLIENT_URL` — the deployed Vercel origin (for example,
-     `https://your-project.vercel.app`)
-3. Deploy. Vercel builds the Vue client and serves the Express API from the
-   serverless function in `api/`. The client uses the same-origin `/api` path.
+Import the repository root as one Vercel project and keep its Root Directory
+set to the repository root. The root `vercel.json` defines two services:
+
+- `client` builds the Vite frontend from `client/` and serves the SPA.
+- `server` deploys the Express API from `server/`.
+
+The public `/api/*` and `/uploads/*` paths are routed to `server`; all other
+paths go to `client`. The frontend calls the API using the same-origin `/api`
+path. The API does not call the frontend service, so no internal service
+binding is needed.
+
+In **Project Settings → Environment Variables**, set `DATABASE_URL`,
+`JWT_SECRET`, `JWT_EXPIRES_IN` (for example, `7d`), and `CLIENT_URL` to the
+production site origin. Use rotated production credentials; do not upload
+`server/.env` or place secrets in `VITE_*` variables.
+
+The backend's local `/uploads` static directory is not persistent storage on
+Vercel. Use object storage for files that must survive deployments or be shared
+across instances.
 
 Never put secrets in `VITE_*` variables, frontend source, or the Vercel build
 output. `.env` files are for local development only; configure production values
